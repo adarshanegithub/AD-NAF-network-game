@@ -1,0 +1,548 @@
+{
+  "schemaVersion": 1,
+  "method": "Check the steps in order: weight, local preference, AS-path, origin, MED. At each step, drop the paths that lose; the step that leaves one path decides.",
+  "misconceptions": {
+    "lower-is-better": {
+      "label": "Lower is better for everything",
+      "allowedAt": [
+        "weight",
+        "localPref"
+      ]
+    },
+    "higher-med-is-better": {
+      "label": "Higher MED is better",
+      "allowedAt": [
+        "med"
+      ]
+    },
+    "shorter-as-path-beats-local-pref": {
+      "label": "A shorter AS-path beats a higher local preference",
+      "allowedAt": [
+        "localPref"
+      ]
+    },
+    "local-pref-beats-weight": {
+      "label": "Local preference beats weight",
+      "allowedAt": [
+        "weight"
+      ]
+    },
+    "scorecard-later-steps": {
+      "label": "Scorecard thinking: a shorter AS-path and better origin outweigh an earlier step",
+      "allowedAt": [
+        "weight",
+        "localPref"
+      ]
+    },
+    "lowest-med-always-wins": {
+      "label": "The lowest MED always wins",
+      "allowedAt": [
+        "weight",
+        "localPref",
+        "asPathLength",
+        "origin"
+      ],
+      "requiresLowestMed": true
+    }
+  },
+  "sources": [
+    {
+      "id": "cisco-13753",
+      "title": "Cisco, Select BGP Best Path Algorithm (Document ID 13753)",
+      "url": "https://www.cisco.com/c/en/us/support/docs/ip/border-gateway-protocol-bgp/13753-25.html",
+      "section": "How the Best Path Algorithm Works",
+      "claim": "Step order weight, local preference, AS-path, origin, MED; default weight 0 and local preference 100; weight is local to the router; MED is compared only when the first AS is the same unless bgp always-compare-med is enabled."
+    },
+    {
+      "id": "rfc4271-4.3",
+      "title": "RFC 4271, A Border Gateway Protocol 4 (BGP-4)",
+      "url": "https://www.rfc-editor.org/rfc/rfc4271#section-4.3",
+      "section": "4.3 Path Attributes (ORIGIN)",
+      "claim": "Origin values IGP = 0, EGP = 1, INCOMPLETE = 2."
+    },
+    {
+      "id": "rfc4271-9.1.2.2",
+      "title": "RFC 4271, A Border Gateway Protocol 4 (BGP-4)",
+      "url": "https://www.rfc-editor.org/rfc/rfc4271#section-9.1.2.2",
+      "section": "9.1.2.2 Breaking Ties (Phase 2)",
+      "claim": "Shortest AS-path, lowest origin, and MED compared only among routes learned from the same neighboring AS."
+    },
+    {
+      "id": "rfc5398",
+      "title": "RFC 5398, AS Number Reservation for Documentation Use",
+      "url": "https://www.rfc-editor.org/rfc/rfc5398",
+      "section": "Section 4",
+      "claim": "ASNs 64496-64511 are reserved for documentation."
+    },
+    {
+      "id": "rfc5737",
+      "title": "RFC 5737, IPv4 Address Blocks Reserved for Documentation",
+      "url": "https://www.rfc-editor.org/rfc/rfc5737",
+      "section": "Section 3",
+      "claim": "192.0.2.0/24 and 203.0.113.0/24 are reserved for documentation."
+    }
+  ],
+  "levels": [
+    {
+      "id": "1",
+      "title": "One step decides",
+      "outcome": "LO1",
+      "briefing": {
+        "concept": "This router follows Cisco's default rules. We model the first five steps only. A real router has more tie-breaks after MED, but every round in this game is settled by one of the five steps shown, so you never need the ones we don't cover. Check the steps in this order: 1 weight (higher wins), 2 local preference (higher wins), 3 AS-path (shorter wins; only the number of ASes counts), 4 origin (lower wins: i = 0, e = 1, ? = 2), 5 MED (lower wins, but only between paths from the same neighboring AS, the leftmost AS in the AS-path). A step is a tie when every remaining path has the best value. At each step, paths without the best value drop out; the step that leaves one path decides.",
+        "example": {
+          "candidates": [
+            {
+              "id": "P",
+              "peer": "192.0.2.33",
+              "weight": 0,
+              "localPref": 100,
+              "asPath": [
+                64506,
+                64510
+              ],
+              "origin": "i",
+              "med": 0
+            },
+            {
+              "id": "Q",
+              "peer": "192.0.2.37",
+              "weight": 0,
+              "localPref": 100,
+              "asPath": [
+                64507,
+                64510
+              ],
+              "origin": "e",
+              "med": 0
+            }
+          ],
+          "winner": "P",
+          "explanation": "Weight (0), local preference (100), and AS-path length (2) tie. Origin decides: lower wins, and P is i (0) while Q is e (1), so P wins. MED is not reached."
+        },
+        "sourceIds": [
+          "cisco-13753",
+          "rfc4271-4.3"
+        ]
+      },
+      "rounds": [
+        {
+          "id": "1.1",
+          "difficulty": 1,
+          "prefix": "203.0.113.0/24",
+          "sourceIds": [
+            "cisco-13753"
+          ],
+          "candidates": [
+            {
+              "id": "A",
+              "peer": "192.0.2.1",
+              "weight": 0,
+              "localPref": 100,
+              "asPath": [
+                64500,
+                64510
+              ],
+              "origin": "i",
+              "med": 0
+            },
+            {
+              "id": "B",
+              "peer": "192.0.2.5",
+              "weight": 0,
+              "localPref": 200,
+              "asPath": [
+                64501,
+                64510
+              ],
+              "origin": "i",
+              "med": 0
+            },
+            {
+              "id": "C",
+              "peer": "192.0.2.9",
+              "weight": 0,
+              "localPref": 100,
+              "asPath": [
+                64502,
+                64510
+              ],
+              "origin": "i",
+              "med": 0
+            }
+          ],
+          "expectedWinner": "B",
+          "wrongChoices": {
+            "A": {
+              "reasonCode": "lower-is-better",
+              "explanation": "Local preference: higher wins. B has 200, A has 100."
+            },
+            "C": {
+              "reasonCode": "lower-is-better",
+              "explanation": "Local preference: higher wins. B has 200, C has 100. C and A tie on every modeled step; the neighboring AS number (64502) is never compared as a value."
+            }
+          }
+        },
+        {
+          "id": "1.2",
+          "difficulty": 1,
+          "prefix": "203.0.113.0/24",
+          "sourceIds": [
+            "cisco-13753",
+            "rfc4271-9.1.2.2"
+          ],
+          "candidates": [
+            {
+              "id": "A",
+              "peer": "192.0.2.1",
+              "weight": 0,
+              "localPref": 100,
+              "asPath": [
+                64500,
+                64510
+              ],
+              "origin": "i",
+              "med": 50
+            },
+            {
+              "id": "B",
+              "peer": "192.0.2.5",
+              "weight": 0,
+              "localPref": 100,
+              "asPath": [
+                64500,
+                64510
+              ],
+              "origin": "i",
+              "med": 20
+            }
+          ],
+          "expectedWinner": "B",
+          "wrongChoices": {
+            "A": {
+              "reasonCode": "higher-med-is-better",
+              "explanation": "MED: lower wins, and both paths come from AS 64500, so MED is compared. B has 20, A has 50."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "title": "Earlier beats better",
+      "outcome": "LO2",
+      "briefing": {
+        "concept": "The steps are checked strictly in order, so an earlier step overrides a more attractive value at a later step. A path with a shorter AS-path or a better origin still loses if an earlier step, such as weight or local preference, has already removed it. Don't add up which path looks best overall: find the first step that separates the paths.",
+        "example": {
+          "candidates": [
+            {
+              "id": "R",
+              "peer": "192.0.2.41",
+              "weight": 0,
+              "localPref": 100,
+              "asPath": [
+                64508,
+                64497,
+                64510
+              ],
+              "origin": "i",
+              "med": 0
+            },
+            {
+              "id": "S",
+              "peer": "192.0.2.45",
+              "weight": 0,
+              "localPref": 100,
+              "asPath": [
+                64509,
+                64510
+              ],
+              "origin": "?",
+              "med": 0
+            }
+          ],
+          "winner": "S",
+          "explanation": "R has the better origin (i vs ?), but AS-path is step 3 and origin is step 4. Weight (0) and local preference (100) tie; S's AS-path is shorter (2 vs 3), so S wins before origin is checked."
+        },
+        "sourceIds": [
+          "cisco-13753"
+        ]
+      },
+      "rounds": [
+        {
+          "id": "2.1",
+          "difficulty": 2,
+          "prefix": "203.0.113.0/24",
+          "sourceIds": [
+            "cisco-13753"
+          ],
+          "candidates": [
+            {
+              "id": "A",
+              "peer": "192.0.2.1",
+              "weight": 0,
+              "localPref": 150,
+              "asPath": [
+                64500,
+                64498,
+                64499,
+                64510
+              ],
+              "origin": "i",
+              "med": 0
+            },
+            {
+              "id": "B",
+              "peer": "192.0.2.5",
+              "weight": 0,
+              "localPref": 100,
+              "asPath": [
+                64501,
+                64510
+              ],
+              "origin": "i",
+              "med": 0
+            }
+          ],
+          "expectedWinner": "A",
+          "wrongChoices": {
+            "B": {
+              "reasonCode": "shorter-as-path-beats-local-pref",
+              "explanation": "Path B has the shorter AS-path, but AS-path is step 3. Step 1, weight: both are 0, so it's a tie. Step 2, local preference: A has 150 and B has 100. Higher wins, so A is chosen before AS-path is checked."
+            }
+          }
+        },
+        {
+          "id": "2.2",
+          "difficulty": 2,
+          "prefix": "203.0.113.0/24",
+          "sourceIds": [
+            "cisco-13753"
+          ],
+          "candidates": [
+            {
+              "id": "A",
+              "peer": "192.0.2.1",
+              "weight": 100,
+              "localPref": 100,
+              "asPath": [
+                64500,
+                64498,
+                64510
+              ],
+              "origin": "?",
+              "med": 0
+            },
+            {
+              "id": "B",
+              "peer": "192.0.2.5",
+              "weight": 0,
+              "localPref": 200,
+              "asPath": [
+                64501,
+                64510
+              ],
+              "origin": "i",
+              "med": 0
+            },
+            {
+              "id": "C",
+              "peer": "192.0.2.9",
+              "weight": 0,
+              "localPref": 100,
+              "asPath": [
+                64502,
+                64510
+              ],
+              "origin": "i",
+              "med": 0
+            }
+          ],
+          "expectedWinner": "A",
+          "wrongChoices": {
+            "B": {
+              "reasonCode": "local-pref-beats-weight",
+              "explanation": "B has the highest local preference, but weight is checked first. A has weight 100, B has 0."
+            },
+            "C": {
+              "reasonCode": "scorecard-later-steps",
+              "explanation": "C has a shorter AS-path than A (2 vs 3) and a better origin (i vs ?), but weight is step 1 and decides first: A has 100, B and C have 0. C is out at weight, so its AS-path and origin are never compared."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "title": "The lowest MED doesn't always win",
+      "outcome": "LO3",
+      "briefing": {
+        "concept": "MED is compared only among the paths still remaining after the earlier steps, and only between paths from the same neighboring AS (the leftmost AS in the AS-path). An earlier step can narrow the field without deciding it. A path with the lowest MED can already be out, and its MED is never compared with paths from a different neighboring AS.",
+        "example": {
+          "candidates": [
+            {
+              "id": "X",
+              "peer": "192.0.2.21",
+              "weight": 0,
+              "localPref": 100,
+              "asPath": [
+                64504,
+                64510
+              ],
+              "origin": "i",
+              "med": 60
+            },
+            {
+              "id": "Y",
+              "peer": "192.0.2.25",
+              "weight": 0,
+              "localPref": 100,
+              "asPath": [
+                64504,
+                64510
+              ],
+              "origin": "i",
+              "med": 25
+            },
+            {
+              "id": "Z",
+              "peer": "192.0.2.29",
+              "weight": 0,
+              "localPref": 90,
+              "asPath": [
+                64505,
+                64510
+              ],
+              "origin": "i",
+              "med": 10
+            }
+          ],
+          "winner": "Y",
+          "explanation": "Z has the lowest MED but is out at local preference (90 < 100). X and Y both come from neighbor AS 64504, so MED is compared and Y wins (25 < 60). Z's MED is never compared with X's or Y's, because it comes from a different neighboring AS."
+        },
+        "sourceIds": [
+          "cisco-13753",
+          "rfc4271-9.1.2.2"
+        ]
+      },
+      "rounds": [
+        {
+          "id": "3.1",
+          "difficulty": 3,
+          "prefix": "203.0.113.0/24",
+          "sourceIds": [
+            "cisco-13753",
+            "rfc4271-9.1.2.2"
+          ],
+          "candidates": [
+            {
+              "id": "A",
+              "peer": "192.0.2.1",
+              "weight": 0,
+              "localPref": 100,
+              "asPath": [
+                64500,
+                64510
+              ],
+              "origin": "i",
+              "med": 50
+            },
+            {
+              "id": "B",
+              "peer": "192.0.2.5",
+              "weight": 0,
+              "localPref": 100,
+              "asPath": [
+                64500,
+                64510
+              ],
+              "origin": "i",
+              "med": 20
+            },
+            {
+              "id": "C",
+              "peer": "192.0.2.9",
+              "weight": 0,
+              "localPref": 100,
+              "asPath": [
+                64501,
+                64510
+              ],
+              "origin": "i",
+              "med": 5
+            }
+          ],
+          "expectedWinner": "B",
+          "wrongChoices": {
+            "A": {
+              "reasonCode": "higher-med-is-better",
+              "explanation": "A and B both come from AS 64500, so MED is compared. Lower wins: B has 20, A has 50."
+            },
+            "C": {
+              "reasonCode": "lowest-med-always-wins",
+              "explanation": "C has the lowest MED (5), but AS-path is step 3 and C's is longer (3 vs 2), so C is out before MED is checked. C also comes from AS 64501, so its MED would never be compared with A's or B's from AS 64500."
+            }
+          }
+        },
+        {
+          "id": "3.2",
+          "difficulty": 3,
+          "prefix": "203.0.113.0/24",
+          "sourceIds": [
+            "cisco-13753",
+            "rfc4271-4.3",
+            "rfc4271-9.1.2.2"
+          ],
+          "candidates": [
+            {
+              "id": "A",
+              "peer": "192.0.2.13",
+              "weight": 0,
+              "localPref": 100,
+              "asPath": [
+                64502,
+                64510
+              ],
+              "origin": "i",
+              "med": 40
+            },
+            {
+              "id": "B",
+              "peer": "192.0.2.17",
+              "weight": 0,
+              "localPref": 100,
+              "asPath": [
+                64502,
+                64510
+              ],
+              "origin": "i",
+              "med": 80
+            },
+            {
+              "id": "C",
+              "peer": "192.0.2.19",
+              "weight": 0,
+              "localPref": 100,
+              "asPath": [
+                64503,
+                64510
+              ],
+              "origin": "?",
+              "med": 0
+            }
+          ],
+          "expectedWinner": "A",
+          "wrongChoices": {
+            "B": {
+              "reasonCode": "higher-med-is-better",
+              "explanation": "A and B both come from AS 64502 and survive origin, so MED is compared. Lower wins: A has 40, B has 80."
+            },
+            "C": {
+              "reasonCode": "lowest-med-always-wins",
+              "explanation": "C has the lowest MED (0), but origin is checked first: C is ? (2), A and B are i (0). C is out before MED. C also comes from AS 64503, so its MED is never compared with paths from AS 64502."
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

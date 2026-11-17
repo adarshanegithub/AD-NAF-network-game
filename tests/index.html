@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AS You Were · Tests</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 16px; background: #fff; color: #111; }
+    .pass { color: #0a6b2e; }
+    .fail { color: #a11212; }
+    #summary { font-size: 1.25rem; font-weight: 700; }
+    li { margin: 2px 0; font-family: ui-monospace, monospace; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <h1>AS You Were · Test results</h1>
+  <p id="summary" role="status" data-state="running">Running…</p>
+  <h2>Failed cases</h2>
+  <ul id="failed"></ul>
+  <details>
+    <summary>All cases</summary>
+    <ul id="all"></ul>
+  </details>
+  <script type="module">
+    import { run } from './runner.js';
+
+    const summary = document.getElementById('summary');
+    const suites = ['./rules.test.js', './feedback.test.js', './state.test.js', './content.test.js', './ui.test.js'];
+    try {
+      for (const s of suites) await import(s);
+      const r = await run();
+      summary.textContent = r.total === 0
+        ? '0 tests discovered — FAIL'
+        : `${r.total} tests · ${r.passed} passed · ${r.failed.length} failed — ${r.ok ? 'PASS' : 'FAIL'}`;
+      summary.className = r.ok ? 'pass' : 'fail';
+      summary.dataset.state = r.ok ? 'pass' : 'fail';
+      const failed = document.getElementById('failed');
+      if (r.failed.length === 0) failed.innerHTML = '<li>None</li>';
+      for (const f of r.failed) {
+        const li = document.createElement('li');
+        li.className = 'fail';
+        li.textContent = `${f.id} — ${f.message}`;
+        failed.append(li);
+      }
+      const all = document.getElementById('all');
+      for (const c of r.results) {
+        const li = document.createElement('li');
+        li.className = c.pass ? 'pass' : 'fail';
+        li.textContent = `${c.pass ? 'PASS' : 'FAIL'} ${c.id}`;
+        all.append(li);
+      }
+    } catch (err) {
+      summary.textContent = 'Test runner error — FAIL: ' + err.message;
+      summary.className = 'fail';
+      summary.dataset.state = 'fail';
+    }
+  </script>
+</body>
+</html>
