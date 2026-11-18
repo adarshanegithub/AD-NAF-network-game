@@ -14,8 +14,8 @@ game:
   skill_level: intermediate      # spec audience: students and early-career engineers who have configured or read about BGP
   play_minutes: 10               # design target from the spec (5-10 min); not yet timed with a real player
   levels: 3                      # 3 levels, 6 rounds in total
-  card_image: ""                 # no card image exists in the repo yet
-  card_image_alt: ""
+  card_image: "assets/images/card.png"   # 1280x720 PNG rendered from assets/images/card.svg
+  card_image_alt: "The title AS You Were and its tagline beside a five-step BGP best-path ladder where weight ties, local preference decides with 150 over 100, and AS-path, origin and MED are not reached."
   repo: "https://github.com/adarshanegithub/AD-NAF-network-game"
   repo_path: ""
   license: Apache-2.0
